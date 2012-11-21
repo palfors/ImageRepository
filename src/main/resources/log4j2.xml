@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration status="OFF">
+    <appenders>
+        <RollingFile name="RollingFile"
+                     fileName="/Users/tkmal32/temp/logs/image_repository.log"
+                     filePattern="/Users/tkmal32/temp/logs/image_repository-%d{MM-dd-yyyy}-%i.log.gz">
+            <PatternLayout>
+                <pattern>%d{HH:mm:ss,SSS} %p %c [%t] %m%n</pattern>
+            </PatternLayout>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="5 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="2"/>
+        </RollingFile>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+        </Console>
+    </appenders>
+    <loggers>
+        <logger name="com.alfors" level="info" additivity="true">
+            <appender-ref ref="RollingFile"/>
+        </logger>
+        <logger name="com" level="debug" additivity="true">
+            <appender-ref ref="Console"/>
+        </logger>
+<!--
+        <root level="trace">
+            <appender-ref ref="Console"/>
+        </root>
+-->
+    </loggers>
+</configuration>
