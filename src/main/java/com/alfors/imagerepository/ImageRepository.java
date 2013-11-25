@@ -1,20 +1,12 @@
 package com.alfors.imagerepository;
 
 import com.alfors.application.ApplicationArguments;
-//import com.drew.imaging.ImageMetadataReader;
-//import com.drew.imaging.ImageProcessingException;
-//import com.drew.metadata.Directory;
-//import com.drew.metadata.Metadata;
-//import com.drew.metadata.Tag;
-//import com.drew.metadata.exif.ExifSubIFDDirectory;
-//import com.drew.metadata.jpeg.JpegDirectory;
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Date;
 
 /**
  * Created by IntelliJ IDEA.
@@ -179,46 +171,5 @@ public class ImageRepository
         }
         return exists;
     }
-
-//    public void organizeImages()
-//    {
-//        // cycle through all images found in the source directory and move then to the destination directory
-//        // under a folder structure defined by the create date (date taken)
-//        File jpegFile = new File("/Users/tkmal32/data/2013/personal/PeteAlfors.jpg");
-//        try {
-//            Metadata metadata = ImageMetadataReader.readMetadata(jpegFile);
-//            System.out.println("gradient.jpg:");
-//            for (Directory directory : metadata.getDirectories()) {
-//                for (Tag tag : directory.getTags()) {
-//                    System.out.println(tag);
-//                }
-//            }
-//            // obtain the Exif directory
-//            ExifSubIFDDirectory directory = metadata.getDirectory(ExifSubIFDDirectory.class);
-//
-//            if (directory != null)
-//            {
-//                // query the tag's value
-//                Date date = directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL);
-//                System.out.println("Original Date: " + date);
-//            }
-//            else
-//            {
-//                System.out.println("No ExifSubIFDDirectory");
-//            }
-//
-//            Iterable<Directory> iter = metadata.getDirectories();
-//            for (Directory dir : iter)
-//            {
-//                System.out.println("Directory: " + dir);
-//            }
-//        } catch (ImageProcessingException e) {
-//            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-//        } catch (IOException e) {
-//            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-//        }
-//
-//    }
-
 
 }
