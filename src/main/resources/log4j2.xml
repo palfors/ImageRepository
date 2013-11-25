@@ -17,16 +17,17 @@
         </Console>
     </appenders>
     <loggers>
-        <logger name="com.alfors" level="info" additivity="true">
+        <root level="trace">
+            <appender-ref ref="RollingFile" level="info"/>
+            <appender-ref ref="Console" level="debug"/>
+        </root>
+        <!--
+        <logger name="com.alfors.imagerepository.ImageRepository" level="debug" additivity="true">
             <appender-ref ref="RollingFile"/>
         </logger>
         <logger name="com" level="debug" additivity="true">
             <appender-ref ref="Console"/>
         </logger>
-<!--
-        <root level="trace">
-            <appender-ref ref="Console"/>
-        </root>
--->
+        -->
     </loggers>
 </configuration>

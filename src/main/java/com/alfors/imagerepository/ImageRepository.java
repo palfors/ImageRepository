@@ -7,11 +7,11 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 
 /**
  * Created by IntelliJ IDEA.
  * User: Peter Alfors
- * Date: 10/22/12
  */
 public class ImageRepository
 {
@@ -20,10 +20,11 @@ public class ImageRepository
     private static final String ARG_SOURCE_PATH = "path";
     private static final String ARG_RECURSIVE = "recursive";
 
-    private static Logger logger = LogManager.getLogger("ImageRepository");
+    private static Logger logger = LogManager.getLogger(ImageRepository.class.getName());
 
     public static void main(String[] args)
     {
+        logger.info("ImageRepository start time: " + new Date(System.currentTimeMillis()));
         ImageRepository imageRepository = new ImageRepository(args);
 
         imageRepository.organizeImages("/Users/tkmal32/data/2013/personal","/Users/tkmal32/temp/imageManager", true);
@@ -50,12 +51,12 @@ public class ImageRepository
         File srcDir = new File(sourceDir);
         if (srcDir != null && srcDir.isDirectory())
         {
-            System.out.println("Found images:");
+            logger.debug("Found images:");
             organizeImages(srcDir, destinationDir, recursive);
         }
         else
         {
-            System.out.println("organizeImages: invalid sourceDir [" + sourceDir + "]");
+            logger.error("organizeImages: invalid sourceDir [" + sourceDir + "]");
         }
     }
 
@@ -84,7 +85,7 @@ public class ImageRepository
                     month = Integer.parseInt(name.substring(4,6));
                     day = Integer.parseInt(name.substring(6));
 
-                    System.out.println(name + "[" + year + "][" + String.format("%02d", month) + "][" + String.format("%02d", day) + "]");
+                    logger.debug(name + "[" + year + "][" + String.format("%02d", month) + "][" + String.format("%02d", day) + "]");
 
                     // check if YEAR destination directory exists
                     destYearDirName = String.format("%02d", year);
@@ -112,22 +113,22 @@ public class ImageRepository
                         if (!fileExists(destDir, fileEntry.getName()))
                         {
                             try {
-                                //System.out.println("copying file [" + destDir.getPath() + "/" + fileEntry.getName() + "] to [" + destDir.getPath() + "]");
+                                logger.debug("copying file [" + destDir.getPath() + "/" + fileEntry.getName() + "] to [" + destDir.getPath() + "]");
                                 FileUtils.copyFile(fileEntry, new File(destDir.getPath() + "/" + fileEntry.getName()), true);
                             } catch (IOException e) {
                                 System.out.println("Unable to copy [" + fileEntry + "].  Error [" + e.getMessage() + "]");
-                                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                                e.printStackTrace();
                             }
                         }
                         else
                         {
-                            System.out.println("File with name [" + fileEntry.getName() + "] already exists in destination directory [" + destDir.getName() + "].  Skipping...");
+                            logger.info("File with name [" + fileEntry.getName() + "] already exists in destination directory [" + destDir.getName() + "].  Skipping...");
                         }
                     }
                     catch (ImageRepositoryException e)
                     {
-                        System.out.println("Unable to copy [" + fileEntry + "].  Error [" + e.getMessage() + "]");
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                        logger.error("Unable to copy [" + fileEntry + "].  Error [" + e.getMessage() + "]");
+                        //e.printStackTrace();
                     }
                 }
             }
@@ -150,7 +151,7 @@ public class ImageRepository
     private boolean fileExists(File directory, String fileName)
         throws ImageRepositoryException
     {
-        System.out.println("fileExists() checking directory [" + directory + "] for existing file [" + fileName + "]");
+        logger.debug("fileExists() checking directory [" + directory + "] for existing file [" + fileName + "]");
         boolean exists = false;
         if (directory == null || !directory.isDirectory())
         {
@@ -159,7 +160,7 @@ public class ImageRepository
         else
         {
             for (final File file : directory.listFiles()) {
-                System.out.println("-- comparing [" + fileName + "] to file: [" + file.getName() + "]");
+                logger.debug("-- comparing [" + fileName + "] to file: [" + file.getName() + "]");
                 if (!file.isDirectory()) {
                     if (fileName.equalsIgnoreCase(file.getName()))
                     {
