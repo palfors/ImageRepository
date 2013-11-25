@@ -5,10 +5,8 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Created by IntelliJ IDEA.
- * User: tkmal32
+ * User: Peter Alfors
  * Date: 11/15/12
- * Time: 6:26 PM
- * To change this template use File | Settings | File Templates.
  */
 public class ApplicationArgument 
 {
@@ -31,7 +29,7 @@ public class ApplicationArgument
         return name;
     }
 
-    public void setName(String name) {
+    private void setName(String name) {
         this.name = name;
     }
 
@@ -39,7 +37,7 @@ public class ApplicationArgument
         return value;
     }
 
-    public void setValue(String value) {
+    private void setValue(String value) {
         this.value = value;
     }
 

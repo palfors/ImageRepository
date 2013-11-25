@@ -8,10 +8,8 @@ import java.util.Iterator;
 
 /**
  * Created by IntelliJ IDEA.
- * User: tkmal32
+ * User: Peter Alfors
  * Date: 11/15/12
- * Time: 6:23 PM
- * To change this template use File | Settings | File Templates.
  */
 public class ApplicationArguments 
 {
@@ -66,17 +64,17 @@ public class ApplicationArguments
      * @param delimeter The string used to deliniate between the name and the value of the argument.
      *                  For example, name=value
      */
-    public void parseArguments(String[] arguments, String delimeter)
+    private void parseArguments(String[] arguments, String delimeter)
     {
         if (arguments != null && arguments.length > 0)
         {
             argumentHashMap = new HashMap<String, ApplicationArgument>(arguments.length);
 
             ApplicationArgument applicationArgument = null;
-            for (int i = 0; i < arguments.length; i++)
+            for (String arg : arguments)
             {
                 applicationArgument = new ApplicationArgument(delimeter);
-                applicationArgument.parse(arguments[i]);
+                applicationArgument.parse(arg);
 
                 argumentHashMap.put(applicationArgument.getName(), applicationArgument);
             }

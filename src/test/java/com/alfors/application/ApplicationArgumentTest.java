@@ -7,10 +7,8 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Created by IntelliJ IDEA.
- * User: tkmal32
+ * User: Peter Alfors
  * Date: 11/16/12
- * Time: 12:21 PM
- * To change this template use File | Settings | File Templates.
  */
 public class ApplicationArgumentTest
 {
