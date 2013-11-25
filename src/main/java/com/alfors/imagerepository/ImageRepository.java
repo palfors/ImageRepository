@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
+import java.util.GregorianCalendar;
 
 /**
  * Created by IntelliJ IDEA.
@@ -80,35 +81,34 @@ public class ImageRepository
                     && name.contains("_")
                     && name.indexOf("_") == 8)
                 {
-                    name = name.substring(0, name.indexOf("_"));
-                    year = Integer.parseInt(name.substring(0,4));
-                    month = Integer.parseInt(name.substring(4,6));
-                    day = Integer.parseInt(name.substring(6));
-
-                    logger.debug(name + "[" + year + "][" + String.format("%02d", month) + "][" + String.format("%02d", day) + "]");
-
-                    // check if YEAR destination directory exists
-                    destYearDirName = String.format("%02d", year);
-                    destYearDir = new File(destinationDir + "/" + destYearDirName);
-                    if (!destYearDir.exists())
+                    try
                     {
-                        // create the directory
-                        destYearDir.mkdir();
-                    }
+                        ImageInterogator imageInterogator = new FileNameParser(name);
+                        GregorianCalendar dateTaken = imageInterogator.getDateTaken();
 
-                    // check if destination directory exists
-                    destDirName = new StringBuffer().append(
-                            String.format("%02d", year)).append(
-                            String.format("%02d", month)).append(
-                            String.format("%02d", day)).toString();
-                    destDir = new File(destinationDir + "/" + destYearDirName + "/" + destDirName);
-                    if (!destDir.exists())
-                    {
-                        // create the directory
-                        destDir.mkdir();
-                    }
+                        logger.debug(name + "[" + dateTaken + "]");
 
-                    try {
+                        // check if YEAR destination directory exists
+                        destYearDirName = String.format("%02d", dateTaken.get(GregorianCalendar.YEAR));
+                        destYearDir = new File(destinationDir + "/" + destYearDirName);
+                        if (!destYearDir.exists())
+                        {
+                            // create the directory
+                            destYearDir.mkdir();
+                        }
+
+                        // check if destination directory exists
+                        destDirName = new StringBuffer().append(
+                                String.format("%02d", dateTaken.get(GregorianCalendar.YEAR))).append(
+                                String.format("%02d", dateTaken.get(GregorianCalendar.MONTH))).append(
+                                String.format("%02d", dateTaken.get(GregorianCalendar.DAY_OF_MONTH))).toString();
+                        destDir = new File(destinationDir + "/" + destYearDirName + "/" + destDirName);
+                        if (!destDir.exists())
+                        {
+                            // create the directory
+                            destDir.mkdir();
+                        }
+
                         // copy the file to the destination directory (if a file with that name does not already exist)
                         if (!fileExists(destDir, fileEntry.getName()))
                         {
