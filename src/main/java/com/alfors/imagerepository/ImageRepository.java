@@ -28,18 +28,12 @@ public class ImageRepository
     private static final String ARG_SOURCE_PATH = "path";
     private static final String ARG_RECURSIVE = "recursive";
 
-    private String path = "/";
-    private boolean recursive = false;
-    private String[] imageTypes = { "jpg", "gif", "png" };
-
     private static Logger logger = LogManager.getLogger("ImageRepository");
 
     public static void main(String[] args)
     {
         ImageRepository imageRepository = new ImageRepository(args);
 
-        //imageRepository.findImages();
-        //imageRepository.testPassByValue();
         imageRepository.organizeImages("/Users/tkmal32/data/2013/personal","/Users/tkmal32/temp/imageManager", true);
     }
 
@@ -56,17 +50,6 @@ public class ImageRepository
 
             applicationArguments.log();
         }
-    }
-
-    public void findImages()
-    {
-        logger.debug("ImageRepository:findImages!");
-
-        // get the source path
-        path = applicationArguments.getArgumentValue(ARG_SOURCE_PATH);
-
-        path = "test_path";
-        logger.info("ImageRepository: searching path: {}", path);
     }
 
     public void organizeImages(String sourceDir, String destinationDir, boolean recursive)
@@ -149,7 +132,7 @@ public class ImageRepository
                             System.out.println("File with name [" + fileEntry.getName() + "] already exists in destination directory [" + destDir.getName() + "].  Skipping...");
                         }
                     }
-                    catch (Exception e)
+                    catch (ImageRepositoryException e)
                     {
                         System.out.println("Unable to copy [" + fileEntry + "].  Error [" + e.getMessage() + "]");
                         e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
@@ -167,17 +150,19 @@ public class ImageRepository
      *
      * @param directory
      * @param fileName
-     * @return
-     * @throws Exception
+     *
+     * @return true if a file with the specified name already exists in the provided directory
+     *
+     * @throws ImageRepositoryException
      */
     private boolean fileExists(File directory, String fileName)
-        throws Exception
+        throws ImageRepositoryException
     {
         System.out.println("fileExists() checking directory [" + directory + "] for existing file [" + fileName + "]");
         boolean exists = false;
         if (directory == null || !directory.isDirectory())
         {
-            throw new Exception("-- Invalid directory [" + directory + "]");
+            throw new ImageRepositoryException("-- Invalid directory [" + directory + "]");
         }
         else
         {
@@ -235,67 +220,5 @@ public class ImageRepository
 //
 //    }
 
-    private void testPassByValue()
-    {
-        // primitive
-        
-        // object
-        System.out.println("testPassByValue(): TEST 1");
-        MyInnerClass object1 = new MyInnerClass("bob");
-        System.out.println("testPassByValue(): initial object [" + object1 + "]");
-        MyInnerClass object2 = testPassByValueNewClass(object1);
-        
-        System.out.println("testPassByValue(): passed object [" + object1 + "] returned object [" + object2 + "]");
 
-        System.out.println("testPassByValue(): TEST 2");
-        object1 = new MyInnerClass("bob");
-        System.out.println("testPassByValue(): initial object [" + object1 + "]");
-        object2 = testPassByValueUpdateClass(object1);
-
-        System.out.println("testPassByValue(): object1 [" + object1 + "] object2 [" + object2 + "]");
-    }
-    
-    private MyInnerClass testPassByValueNewClass(MyInnerClass object)
-    {
-        System.out.println("testPassByValueNewClass() initial object [" + object + "]");
-        object = new MyInnerClass("john");
-
-        System.out.println("testPassByValueNewClass() created and returning object [" + object + "]");
-        return object;
-    }
-
-    private MyInnerClass testPassByValueUpdateClass(MyInnerClass object)
-    {
-        System.out.println("testPassByValueUpdateClass() initial object [" + object + "]");
-        object.setName("tom");
-
-        System.out.println("testPassByValueUpdateClass() updated and returning object [" + object + "]");
-        return object;
-    }
-    
-    protected class MyInnerClass
-    {
-        String _name = null;
-        
-        public MyInnerClass(String name)
-        {
-            setName(name);
-        }
-
-        public String getName()
-        {
-            return _name;
-        }
-
-        public void setName(String name)
-        {
-            _name = name;
-        }
-        
-        public String toString()
-        {
-            return getName();
-        }
-    }
-    
 }
