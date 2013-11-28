@@ -9,4 +9,9 @@ public class ImageRepositoryException extends Exception {
     {
         super(message);
     }
+
+    public ImageRepositoryException(String message, Throwable t)
+    {
+        super(message, t);
+    }
 }

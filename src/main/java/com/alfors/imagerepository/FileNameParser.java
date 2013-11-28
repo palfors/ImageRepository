@@ -1,8 +1,9 @@
 package com.alfors.imagerepository;
 
-import java.io.File;
-import java.util.Date;
-import java.util.GregorianCalendar;
+import java.io.*;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created with IntelliJ IDEA.
@@ -13,7 +14,9 @@ import java.util.GregorianCalendar;
  */
 public class FileNameParser implements ImageInterogator {
 
-    String fileName = null;
+    private String fileName = null;
+    private List<String> name_formats = null;
+
 
     public FileNameParser(String file_name)
     {
@@ -27,6 +30,41 @@ public class FileNameParser implements ImageInterogator {
         if (fileName == null || fileName.trim().length() == 0)
             throw new ImageRepositoryException("Invalid file name [" + fileName + "]");
 
+        date = findDateInFileName(fileName);
+        if (date == null)
+        {
+            throw new ImageRepositoryException("Unable to determine date from file name [" + fileName + "]");
+        }
+
+        return date;
+    }
+
+    private GregorianCalendar findDateInFileName(String fileName) throws ImageRepositoryException {
+        GregorianCalendar date = null;
+
+        // interrogate the file name looking for 8 digits that would represent a date
+        // assume that it will either be the start of the file name or be wrapped with underscores (_)
+        if (name_formats == null)
+            loadNameFormats();
+
+        System.out.println("findDateInFileName: fileName: " + fileName);
+        // cycle through the provided formats
+        for (String format : name_formats)
+        {
+            Pattern pattern = Pattern.compile(format);
+            Matcher matcher = pattern.matcher(fileName);
+
+            System.out.println("- format: " + format);
+            // will use the first occurrence only
+            if (matcher.find()) {
+                System.out.println("--- Found it!");
+                System.out.println("--- Start index: " + matcher.start());
+                System.out.println("--- End index: " + matcher.end() + " ");
+                System.out.println("--- Group: " + matcher.group());
+            }
+
+        }
+
         if (fileName.contains("_") && fileName.indexOf("_") == 8)
         {
             String dateString = fileName.substring(0, fileName.indexOf("_"));
@@ -36,11 +74,51 @@ public class FileNameParser implements ImageInterogator {
 
             date = new GregorianCalendar(year, month, day);
         }
-        else
-        {
-            // TODO: might be different formats where the date is embedded in the name in a different location
-        }
 
         return date;
     }
+
+    /**
+     * Load the formats from the properties file
+     *
+     * @throws ImageRepositoryException
+     */
+    private void loadNameFormats()
+            throws ImageRepositoryException
+    {
+        try {
+            InputStream inputStream =
+                    FileNameParser.class.getResourceAsStream("/filenameparser.properties");
+
+            if (inputStream == null)
+                throw new ImageRepositoryException("Unable to load filenameparser.properties");
+
+            name_formats = new ArrayList<String>();
+
+            // in case some file names have both so sorting on key name to define an order to apply
+            Properties properties = new Properties() {
+                @Override
+                public synchronized Enumeration<Object> keys() {
+                    return Collections.enumeration(new TreeSet<Object>(super.keySet()));
+                }
+            };
+            properties.load(inputStream);
+
+            String format = null;
+            Enumeration<Object> keys = properties.keys();
+
+            while (keys.hasMoreElements())
+            {
+                format = properties.getProperty((String) keys.nextElement());
+                System.out.println("format: " + format);
+                name_formats.add(format);
+            }
+
+
+        } catch (IOException e) {
+            throw new ImageRepositoryException(
+                    "Unable to load formats from properties file [" + e.getMessage() + "]", e);
+        }
+    }
+
 }

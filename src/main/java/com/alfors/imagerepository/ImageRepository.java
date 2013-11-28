@@ -64,13 +64,11 @@ public class ImageRepository
     public void organizeImages(final File sourceFolder, String destinationDir, boolean recursive)
     {
         String name = null;
-        int year;
-        int month;
-        int day;
         String destYearDirName = null;
         File destYearDir;
         String destDirName = null;
         File destDir;
+        ImageInterogator imageInterogator = null;
 
         for (final File fileEntry : sourceFolder.listFiles()) {
             if (fileEntry.isDirectory() && recursive) {
@@ -83,7 +81,8 @@ public class ImageRepository
                 {
                     try
                     {
-                        ImageInterogator imageInterogator = new FileNameParser(name);
+                        // TODO: refactor so we dont create a new instance every time.  Maybe use a singleton?
+                        imageInterogator = new FileNameParser(name);
                         GregorianCalendar dateTaken = imageInterogator.getDateTaken();
 
                         logger.debug(name + "[" + dateTaken + "]");
