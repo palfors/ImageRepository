@@ -15,7 +15,7 @@ public class ImageFileTypes {
 
     private static final String[] image_types = { JPEG_EXT };
 
-    public boolean isImageExtension(String extenstion)
+    public static boolean isSupported(String extenstion)
     {
         boolean isValid = false;
         for (String ext : image_types)

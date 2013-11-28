@@ -9,6 +9,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 /**
  * Created by IntelliJ IDEA.
@@ -22,13 +28,19 @@ public class ImageRepository
     private static final String ARG_RECURSIVE = "recursive";
 
     private static Logger logger = LogManager.getLogger(ImageRepository.class.getName());
+    @Autowired
+    ImageInterrogator imageInterrogator;
 
     public static void main(String[] args)
     {
         logger.info("ImageRepository start time: " + new Date(System.currentTimeMillis()));
         ImageRepository imageRepository = new ImageRepository(args);
 
-        imageRepository.organizeImages("/Users/tkmal32/data/2013/personal","/Users/tkmal32/temp/imageManager", true);
+        try {
+            imageRepository.organizeImages("/Users/tkmal32/data/2013/personal","/Users/tkmal32/temp/imageManager", true);
+        } catch (ImageRepositoryException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
     }
 
     public ImageRepository(String[] args)
@@ -47,6 +59,7 @@ public class ImageRepository
     }
 
     public void organizeImages(String sourceDir, String destinationDir, boolean recursive)
+            throws ImageRepositoryException
     {
         // for now, only process images with the name starting with a the date
         File srcDir = new File(sourceDir);
@@ -62,74 +75,80 @@ public class ImageRepository
     }
 
     public void organizeImages(final File sourceFolder, String destinationDir, boolean recursive)
+            throws ImageRepositoryException
     {
-        String name = null;
         String destYearDirName = null;
         File destYearDir;
         String destDirName = null;
         File destDir;
-        ImageInterogator imageInterogator = null;
+        GregorianCalendar dateTaken = null;
+
+        ApplicationContext context = new ClassPathXmlApplicationContext("application-context.xml");
+        imageInterrogator = (ImageInterrogator) context.getBean("imageInterrogator");
 
         for (final File fileEntry : sourceFolder.listFiles()) {
             if (fileEntry.isDirectory() && recursive) {
                 organizeImages(fileEntry, destinationDir, recursive);
-            } else {
-                name = fileEntry.getName();
-                if (name.toLowerCase().contains(".jpg")
-                    && name.contains("_")
-                    && name.indexOf("_") == 8)
+            }
+            else {
+                if (isSupportedImageFile(fileEntry))
                 {
                     try
                     {
-                        // TODO: refactor so we dont create a new instance every time.  Maybe use a singleton?
-                        imageInterogator = new FileNameParser(name);
-                        GregorianCalendar dateTaken = imageInterogator.getDateTaken();
+                        dateTaken = imageInterrogator.getDateTaken(fileEntry);
 
-                        logger.debug(name + "[" + dateTaken + "]");
+                        logger.debug("organizeImage() " + fileEntry.getName() + " date taken [" + dateTaken + "]");
 
-                        // check if YEAR destination directory exists
-                        destYearDirName = String.format("%02d", dateTaken.get(GregorianCalendar.YEAR));
-                        destYearDir = new File(destinationDir + "/" + destYearDirName);
-                        if (!destYearDir.exists())
+                        if (dateTaken != null)
                         {
-                            // create the directory
-                            destYearDir.mkdir();
-                        }
+                            // check if YEAR destination directory exists
+                            destYearDirName = String.format("%02d", dateTaken.get(GregorianCalendar.YEAR));
+                            destYearDir = new File(destinationDir + "/" + destYearDirName);
+                            if (!destYearDir.exists())
+                            {
+                                // create the directory
+                                destYearDir.mkdir();
+                            }
 
-                        // check if destination directory exists
-                        destDirName = new StringBuffer().append(
-                                String.format("%02d", dateTaken.get(GregorianCalendar.YEAR))).append(
-                                String.format("%02d", dateTaken.get(GregorianCalendar.MONTH))).append(
-                                String.format("%02d", dateTaken.get(GregorianCalendar.DAY_OF_MONTH))).toString();
-                        destDir = new File(destinationDir + "/" + destYearDirName + "/" + destDirName);
-                        if (!destDir.exists())
-                        {
-                            // create the directory
-                            destDir.mkdir();
-                        }
+                            // check if destination directory exists
+                            destDirName = new StringBuffer().append(
+                                    String.format("%02d", dateTaken.get(GregorianCalendar.YEAR))).append(
+                                    String.format("%02d", dateTaken.get(GregorianCalendar.MONTH))).append(
+                                    String.format("%02d", dateTaken.get(GregorianCalendar.DAY_OF_MONTH))).toString();
+                            destDir = new File(destinationDir + "/" + destYearDirName + "/" + destDirName);
+                            if (!destDir.exists())
+                            {
+                                // create the directory
+                                destDir.mkdir();
+                            }
 
-                        // copy the file to the destination directory (if a file with that name does not already exist)
-                        if (!fileExists(destDir, fileEntry.getName()))
-                        {
-                            try {
-                                logger.debug("copying file [" + destDir.getPath() + "/" + fileEntry.getName() + "] to [" + destDir.getPath() + "]");
-                                FileUtils.copyFile(fileEntry, new File(destDir.getPath() + "/" + fileEntry.getName()), true);
-                            } catch (IOException e) {
-                                System.out.println("Unable to copy [" + fileEntry + "].  Error [" + e.getMessage() + "]");
-                                e.printStackTrace();
+                            // copy the file to the destination directory (if a file with that name does not already exist)
+                            if (!fileExists(destDir, fileEntry.getName()))
+                            {
+                                try {
+                                    logger.debug("organizeImage() copying file [" + destDir.getPath() + "/" + fileEntry.getName() + "] to [" + destDir.getPath() + "]");
+                                    FileUtils.copyFile(fileEntry, new File(destDir.getPath() + "/" + fileEntry.getName()), true);
+                                } catch (IOException e) {
+                                    System.out.println("organizeImage() Unable to copy [" + fileEntry + "].  Error [" + e.getMessage() + "]");
+                                    e.printStackTrace();
+                                }
+                            }
+                            else
+                            {
+                                logger.info("organizeImage() File with name [" + fileEntry.getName() + "] already exists in destination directory [" + destDir.getName() + "].  Skipping...");
                             }
                         }
                         else
-                        {
-                            logger.info("File with name [" + fileEntry.getName() + "] already exists in destination directory [" + destDir.getName() + "].  Skipping...");
-                        }
+                            logger.warn("organizeImage() Unable to determine date taken for image [" + fileEntry.getName() + "].  Skipping...");
                     }
                     catch (ImageRepositoryException e)
                     {
-                        logger.error("Unable to copy [" + fileEntry + "].  Error [" + e.getMessage() + "]");
-                        //e.printStackTrace();
+                        logger.error("organizeImage() Unable to copy image [" + fileEntry + "].  Error [" + e.getMessage() + "]");
+                        // move on to the next image
                     }
                 }
+                else
+                    logger.debug("organizeImage() File [" + fileEntry + "] is not a supported image type.  Ignoring...");
             }
         }
     }
@@ -170,6 +189,31 @@ public class ImageRepository
             }
         }
         return exists;
+    }
+
+    private boolean isSupportedImageFile(File file)
+            throws ImageRepositoryException
+    {
+        if (file == null)
+            throw new ImageRepositoryException("isSupportedImageFile(): Missing image file");
+
+        boolean isImage = false;
+
+        // get the file extension
+        Pattern pattern = Pattern.compile("\\.[a-zA-Z]{3}$");
+        Matcher matcher = pattern.matcher(file.getName());
+        if (matcher.find()) {
+            String ext = matcher.group();
+
+            // strip off the leading .
+            isImage = ImageFileTypes.isSupported(ext.substring(1));
+        }
+        else
+            logger.debug("-- unable determine extension in file [" + file.getName() +
+                    "].  Assuming unsupported file type...");
+
+
+        return isImage;
     }
 
 }

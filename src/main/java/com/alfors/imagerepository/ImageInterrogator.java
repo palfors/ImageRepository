@@ -1,5 +1,6 @@
 package com.alfors.imagerepository;
 
+import java.io.File;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
@@ -10,8 +11,8 @@ import java.util.GregorianCalendar;
  * Time: 9:26 PM
  * To change this template use File | Settings | File Templates.
  */
-public interface ImageInterogator {
+public interface ImageInterrogator {
 
-    public GregorianCalendar getDateTaken() throws ImageRepositoryException;
+    public GregorianCalendar getDateTaken(File file) throws ImageRepositoryException;
 
 }
