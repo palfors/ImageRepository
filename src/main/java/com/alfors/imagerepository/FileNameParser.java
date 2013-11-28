@@ -61,18 +61,28 @@ public class FileNameParser implements ImageInterogator {
                 System.out.println("--- Start index: " + matcher.start());
                 System.out.println("--- End index: " + matcher.end() + " ");
                 System.out.println("--- Group: " + matcher.group());
+
+                String dateString = matcher.group();
+
+                // filter out non digits
+                pattern = Pattern.compile("\\d{8}");
+                matcher = pattern.matcher(dateString);
+                if (matcher.find()) {
+                    dateString = matcher.group();
+                    System.out.println("--- Group: " + matcher.group());
+
+                    int year = Integer.parseInt(dateString.substring(0,4));
+                    int month = Integer.parseInt(dateString.substring(4,6));
+                    int day = Integer.parseInt(dateString.substring(6));
+
+                    date = new GregorianCalendar(year, month, day);
+                }
+                else {
+                    throw new ImageRepositoryException(
+                            "Format [" + format + "] does not provide an 8 digit date");
+                }
             }
 
-        }
-
-        if (fileName.contains("_") && fileName.indexOf("_") == 8)
-        {
-            String dateString = fileName.substring(0, fileName.indexOf("_"));
-            int year = Integer.parseInt(dateString.substring(0,4));
-            int month = Integer.parseInt(dateString.substring(4,6));
-            int day = Integer.parseInt(dateString.substring(6));
-
-            date = new GregorianCalendar(year, month, day);
         }
 
         return date;
