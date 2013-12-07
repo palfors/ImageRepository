@@ -93,7 +93,10 @@ public class DateHierarchyOrganizer extends AbstractOrganizer
         }
         else
         {
-            logger.info("organize() File [{}] already exists in destination directory [{}].  Skipping...", imageFile.getPath(), destDir.getName());
+            // move to a duplicated directory so that it is clear why it was not moved and let the user decide to
+            // delete them or not
+            this.moveToDuplicateFolder(imageFile);
+            logger.info("organize() File [{}] already exists in destination directory [{}]. File was moved the duplicates directory instead", imageFile.getPath(), destDir.getName());
         }
 
     }

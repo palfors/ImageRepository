@@ -15,6 +15,7 @@ import java.io.File;
  */
 public abstract class AbstractOrganizer implements ImageOrganizer {
 
+    protected final String DUPLICATE_FOLDERNAME = "duplicates";
     private static Logger logger = LogManager.getLogger(AbstractOrganizer.class.getName());
 
     /**
@@ -55,5 +56,33 @@ public abstract class AbstractOrganizer implements ImageOrganizer {
         return exists;
     }
 
+
+    /**
+     * Move the provided file to a "duplicates" directory in the same level
+     * The directory will be created if necessary
+     *
+     * @param fileToMove
+     */
+    protected void moveToDuplicateFolder(File fileToMove)
+    {
+        String imageDir = fileToMove.getParentFile().getPath();
+        // check for existing 'duplicate' folder
+
+        File dupDir = new File(imageDir + "/" + DUPLICATE_FOLDERNAME);
+        if (!dupDir.exists())
+        {
+            // create the directory
+            logger.info("moveToDuplicateFolder() creating duplicate directory [{}]", dupDir);
+            dupDir.mkdir();
+        }
+
+        // move the file into the new directory
+        File dupFile = new File(dupDir.getPath() + "/" + fileToMove.getName());
+        if (!dupFile.exists())
+        {
+            logger.debug("moveToDuplicateFolder() moving duplicate image [{}] to [{}]", fileToMove, dupDir);
+            fileToMove.renameTo(dupFile);
+        }
+    }
 
 }
