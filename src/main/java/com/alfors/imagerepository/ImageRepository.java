@@ -1,14 +1,16 @@
 package com.alfors.imagerepository;
 
 import com.alfors.application.ApplicationArguments;
+import com.alfors.imagerepository.interrogator.ImageInterrogator;
+import com.alfors.imagerepository.organizer.ImageOrganizer;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Date;
-import java.util.GregorianCalendar;
+import java.io.InputStream;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,28 +26,68 @@ public class ImageRepository
 {
     ApplicationArguments applicationArguments = null;
 
-    private static final String ARG_SOURCE_PATH = "path";
+    private static final String ARG_SOURCE_PATH = "src";
+    private static final String ARG_DESTINATION_PATH = "dest";
     private static final String ARG_RECURSIVE = "recursive";
 
     private static Logger logger = LogManager.getLogger(ImageRepository.class.getName());
     @Autowired
     ImageInterrogator imageInterrogator;
+    @Autowired
+    ImageOrganizer imageOrganizer;
 
     public static void main(String[] args)
     {
-        logger.info("ImageRepository start time: " + new Date(System.currentTimeMillis()));
+        long start = System.currentTimeMillis();
+        logger.debug("main() start time: " + new Date(start));
         ImageRepository imageRepository = new ImageRepository(args);
 
+        int processCount = 0;
+
         try {
-            imageRepository.organizeImages("/Users/tkmal32/data/2013/personal","/Users/tkmal32/temp/imageManager", true);
+            String sourceDir = imageRepository.getSourceDir();
+            String destinationDir = imageRepository.getDestinationDir();
+            boolean searchRecursively = imageRepository.isRecursiveSearch();
+
+            logger.info("main() start time: " + new Date(System.currentTimeMillis()));
+            processCount = imageRepository.organize(sourceDir, destinationDir, searchRecursively);
+//            imageRepository.organizeImages("/Users/tkmal32/data/2013/personal","/Users/tkmal32/temp/imageManager", true);
+
         } catch (ImageRepositoryException e) {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
+
+        long end = System.currentTimeMillis();
+        logger.debug("main() end time: " + new Date(end));
+        logger.info("main() organization of [" + processCount + "] file(s) took: " + ((end-start)/1000) + " seconds");
     }
 
     public ImageRepository(String[] args)
     {
         parseCommandArgs(args);
+    }
+
+    public String getSourceDir()
+    {
+        return applicationArguments.getArgumentValue(ARG_SOURCE_PATH);
+    }
+
+    public String getDestinationDir()
+    {
+        return applicationArguments.getArgumentValue(ARG_DESTINATION_PATH);
+    }
+
+    public boolean isRecursiveSearch()
+    {
+        // default to false
+        boolean recursive = false;
+        String recursiveArg = applicationArguments.getArgumentValue(ARG_RECURSIVE);
+        if (recursiveArg != null && recursiveArg.trim().length() > 0)
+        {
+            recursive = Boolean.parseBoolean(recursiveArg);
+        }
+
+        return recursive;
     }
 
     private void parseCommandArgs(String[] args)
@@ -58,137 +100,99 @@ public class ImageRepository
         }
     }
 
-    public void organizeImages(String sourceDir, String destinationDir, boolean recursive)
+    public int organize(String sourceDir, String destinationDir, boolean recursive)
             throws ImageRepositoryException
     {
-        // for now, only process images with the name starting with a the date
+        if (sourceDir == null || sourceDir.trim().length() == 0)
+            throw new ImageRepositoryException("organize() sourceDir is required!");
+        if (destinationDir == null || destinationDir.trim().length() == 0)
+            throw new ImageRepositoryException("organize() destinationDir is required!");
+
+        int organizedCount = 0;
+
         File srcDir = new File(sourceDir);
         if (srcDir != null && srcDir.isDirectory())
         {
-            logger.debug("Found images:");
-            organizeImages(srcDir, destinationDir, recursive);
+            File destDir = new File(destinationDir);
+            if (destDir != null && destDir.isDirectory())
+            {
+                organizedCount = organize(srcDir, destDir, recursive);
+            }
         }
         else
         {
-            logger.error("organizeImages: invalid sourceDir [" + sourceDir + "]");
+            logger.error("organize() Invalid sourceDir [" + sourceDir + "]");
         }
+
+        return organizedCount;
     }
 
-    public void organizeImages(final File sourceFolder, String destinationDir, boolean recursive)
+    /**
+     *
+     * @param sourceFolder
+     * @param destinationDir
+     * @param recursive
+     * @return  Count of files processed
+     *
+     * @throws ImageRepositoryException
+     */
+    public int organize(final File sourceFolder, final File destinationDir, boolean recursive)
             throws ImageRepositoryException
     {
-        String destYearDirName = null;
-        File destYearDir;
-        String destDirName = null;
-        File destDir;
-        GregorianCalendar dateTaken = null;
+        if (sourceFolder == null)
+            throw new ImageRepositoryException("organizeImages() sourceFolder is required!");
+        if (destinationDir == null)
+            throw new ImageRepositoryException("organizeImages() destinationDir is required!");
 
         ApplicationContext context = new ClassPathXmlApplicationContext("application-context.xml");
         imageInterrogator = (ImageInterrogator) context.getBean("imageInterrogator");
+        imageOrganizer = (ImageOrganizer) context.getBean("imageOrganizer");
 
-        for (final File fileEntry : sourceFolder.listFiles()) {
-            if (fileEntry.isDirectory() && recursive) {
-                organizeImages(fileEntry, destinationDir, recursive);
+        GregorianCalendar dateTaken = null;
+        int progressCounter = 0;
+        int organizedCount = 0;
+
+        File[] files = sourceFolder.listFiles();
+        if (files != null)
+            logger.info("organize() Directory [" + sourceFolder + "] contains [" + files.length + "] files");
+
+        for (final File file : files) {
+            progressCounter++;
+            if (file.isDirectory() && recursive) {
+                organize(file, destinationDir, recursive);
             }
             else {
-                if (isSupportedImageFile(fileEntry))
+                if (isSupportedImageFile(file))
                 {
                     try
                     {
-                        dateTaken = imageInterrogator.getDateTaken(fileEntry);
+                        dateTaken = imageInterrogator.getDateTaken(file);
 
-                        logger.debug("organizeImage() " + fileEntry.getName() + " date taken [" + dateTaken + "]");
+                        logger.debug("organizeImages() " + file.getName() + " date taken [" + dateTaken + "]");
 
                         if (dateTaken != null)
                         {
-                            // check if YEAR destination directory exists
-                            destYearDirName = String.format("%02d", dateTaken.get(GregorianCalendar.YEAR));
-                            destYearDir = new File(destinationDir + "/" + destYearDirName);
-                            if (!destYearDir.exists())
-                            {
-                                // create the directory
-                                destYearDir.mkdir();
-                            }
-
-                            // check if destination directory exists
-                            destDirName = new StringBuffer().append(
-                                    String.format("%02d", dateTaken.get(GregorianCalendar.YEAR))).append(
-                                    String.format("%02d", dateTaken.get(GregorianCalendar.MONTH))).append(
-                                    String.format("%02d", dateTaken.get(GregorianCalendar.DAY_OF_MONTH))).toString();
-                            destDir = new File(destinationDir + "/" + destYearDirName + "/" + destDirName);
-                            if (!destDir.exists())
-                            {
-                                // create the directory
-                                destDir.mkdir();
-                            }
-
-                            // copy the file to the destination directory (if a file with that name does not already exist)
-                            if (!fileExists(destDir, fileEntry.getName()))
-                            {
-                                try {
-                                    logger.debug("organizeImage() copying file [" + destDir.getPath() + "/" + fileEntry.getName() + "] to [" + destDir.getPath() + "]");
-                                    FileUtils.copyFile(fileEntry, new File(destDir.getPath() + "/" + fileEntry.getName()), true);
-                                } catch (IOException e) {
-                                    System.out.println("organizeImage() Unable to copy [" + fileEntry + "].  Error [" + e.getMessage() + "]");
-                                    e.printStackTrace();
-                                }
-                            }
-                            else
-                            {
-                                logger.info("organizeImage() File with name [" + fileEntry.getName() + "] already exists in destination directory [" + destDir.getName() + "].  Skipping...");
-                            }
+                            imageOrganizer.organize(file, destinationDir, dateTaken);
+                            organizedCount++;
                         }
                         else
-                            logger.warn("organizeImage() Unable to determine date taken for image [" + fileEntry.getName() + "].  Skipping...");
+                            logger.warn("organize() Unable to determine date taken for image [" + file.getName() + "].  Skipping...");
                     }
                     catch (ImageRepositoryException e)
                     {
-                        logger.error("organizeImage() Unable to copy image [" + fileEntry + "].  Error [" + e.getMessage() + "]");
+                        logger.error("organize() Unable to copy image [" + file + "].  Error [" + e.getMessage() + "]");
                         // move on to the next image
                     }
                 }
                 else
-                    logger.debug("organizeImage() File [" + fileEntry + "] is not a supported image type.  Ignoring...");
+                    logger.debug("organize() File [" + file + "] is not a supported image type.  Ignoring...");
             }
-        }
-    }
 
-    /**
-     * Check if a file with the specified name already exists in the provided directory
-     *
-     * TODO: cache the directory and its file names to reduce file system lookups
-     * TODO: better error handling other than Exception
-     *
-     * @param directory
-     * @param fileName
-     *
-     * @return true if a file with the specified name already exists in the provided directory
-     *
-     * @throws ImageRepositoryException
-     */
-    private boolean fileExists(File directory, String fileName)
-        throws ImageRepositoryException
-    {
-        logger.debug("fileExists() checking directory [" + directory + "] for existing file [" + fileName + "]");
-        boolean exists = false;
-        if (directory == null || !directory.isDirectory())
-        {
-            throw new ImageRepositoryException("-- Invalid directory [" + directory + "]");
+            if ((progressCounter % 100) == 0)
+                logger.info("organize() processed [" + progressCounter + "] of [" + files.length + "] files");
         }
-        else
-        {
-            for (final File file : directory.listFiles()) {
-                logger.debug("-- comparing [" + fileName + "] to file: [" + file.getName() + "]");
-                if (!file.isDirectory()) {
-                    if (fileName.equalsIgnoreCase(file.getName()))
-                    {
-                        exists = true;
-                        break;
-                    }
-                }
-            }
-        }
-        return exists;
+
+        return organizedCount;
     }
 
     private boolean isSupportedImageFile(File file)
@@ -215,5 +219,6 @@ public class ImageRepository
 
         return isImage;
     }
+
 
 }

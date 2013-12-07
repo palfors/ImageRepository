@@ -2,8 +2,8 @@
 <configuration status="OFF">
     <appenders>
         <RollingFile name="RollingFile"
-                     fileName="/Users/tkmal32/temp/logs/image_repository.log"
-                     filePattern="/Users/tkmal32/temp/logs/image_repository-%d{MM-dd-yyyy}-%i.log.gz">
+                     fileName="/Users/tkmal32/temp/imageRepository/image_repository.log"
+                     filePattern="/Users/tkmal32/temp/imageRepository/image_repository-%d{MM-dd-yyyy}-%i.log.gz">
             <PatternLayout>
                 <pattern>%d{HH:mm:ss,SSS} %p %c [%t] %m%n</pattern>
             </PatternLayout>
